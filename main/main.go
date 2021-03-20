@@ -8,8 +8,19 @@ import (
 )
 
 func main() {
-	i := item.Item{Name: "hello world"}
-	arr := []*item.Item{&i}
+	arr := []*item.Item{
+		{Name: "pinkerton"},
+		{Name: "blue"},
+		{Name: "green"},
+		{Name: "white"},
+		{Name: "ewbaite"},
+		{Name: "okhuman"},
+		{Name: "black"},
+		{Name: "pacific"},
+	}
 	orderer := strict.StrictOrderer{Items: arr}
-	fmt.Println(orderer.GetItems()[0].GetName())
+	orderer.Sort()
+	fmt.Println(orderer.GetItems()[7].GetName())
+	fmt.Println(orderer.GetItems()[6].GetName())
+	fmt.Println(orderer.GetItems()[5].GetName())
 }
