@@ -78,6 +78,9 @@ func (s *StrictOrderer) compare(idx1, idx2 int) int {
 	items := s.GetItems()
 	item1 := items[idx1].GetName()
 	item2 := items[idx2].GetName()
+	if item1 == item2 {
+		return idx1
+	}
 	s.OutgoingComps <- [2]string{item1, item2}
 	comparison := <-s.IncomingComps
 	if comparison[0] == item1 {

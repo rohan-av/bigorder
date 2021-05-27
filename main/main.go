@@ -37,9 +37,9 @@ func main() {
 				}
 			} else {
 				fmt.Println("channel closed")
-				fmt.Println(orderer.GetItems()[7].GetName())
-				fmt.Println(orderer.GetItems()[6].GetName())
-				fmt.Println(orderer.GetItems()[5].GetName())
+				fmt.Printf("1st: %v\n", orderer.GetItems()[7].GetName())
+				fmt.Printf("2nd: %v\n", orderer.GetItems()[6].GetName())
+				fmt.Printf("3rd: %v\n", orderer.GetItems()[5].GetName())
 				return
 			}
 		default:
