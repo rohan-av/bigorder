@@ -29,9 +29,7 @@ func (s *StrictOrderer) GetNextComparison() [2]string {
 }
 
 func (s *StrictOrderer) SendComparison(higher, lower string) {
-	go func() {
-		s.IncomingComps <- [2]string{higher, lower}
-	}()
+	s.IncomingComps <- [2]string{higher, lower}
 }
 
 // for debugging purposes
@@ -91,7 +89,7 @@ func (s *StrictOrderer) compare(idx1, idx2 int) int {
 }
 
 func (s *StrictOrderer) binarySearch(start, end, item int) {
-	median := (start + end) / 2
+	median := start + (end-start)/2
 	if end < start {
 		s.insertItem(start, item)
 		return
