@@ -7,17 +7,34 @@ import (
 )
 
 type StrictOrderer struct {
-	Items []*item.Item
+	Items         []*item.Item
+	OutgoingComps chan [2]string
+	IncomingComps chan [2]string
 }
 
 func (s *StrictOrderer) GetItems() []*item.Item {
 	return s.Items
 }
 
-func (s *StrictOrderer) SetItem(idx int, item *item.Item) {
-	s.GetItems()[idx] = item
+func (s *StrictOrderer) GetSortedList() []*item.Item {
+	if _, ok := <-s.IncomingComps; !ok {
+		return s.GetItems()
+	} else {
+		return nil // sorting is not over yet
+	}
 }
 
+func (s *StrictOrderer) GetNextComparison() [2]string {
+	return <-s.OutgoingComps
+}
+
+func (s *StrictOrderer) SendComparison(higher, lower string) {
+	go func() {
+		s.IncomingComps <- [2]string{higher, lower}
+	}()
+}
+
+// for debugging purposes
 func (s *StrictOrderer) PrintItems() {
 	fmt.Print("\n")
 	for i := 0; i < s.Len(); i++ {
@@ -30,53 +47,55 @@ func (s *StrictOrderer) Len() int {
 	return len(s.GetItems())
 }
 
-func (s *StrictOrderer) Compare(idx1, idx2 int) int {
+func (s *StrictOrderer) Sort() {
+	// splits array into sorted and unsorted regions
+	for i := 1; i < s.Len(); i++ {
+		fmt.Printf("i = %v\n", i)
+		s.binarySearch(0, i, i)
+		s.PrintItems()
+	}
+	close(s.IncomingComps)
+	close(s.OutgoingComps)
+}
+
+func (s *StrictOrderer) setItem(idx int, item *item.Item) {
+	s.GetItems()[idx] = item
+}
+
+func (s *StrictOrderer) swap(idx1, idx2 int) {
+	tmp := s.GetItems()[idx1]
+	s.setItem(idx1, s.GetItems()[idx2])
+	s.setItem(idx2, tmp)
+}
+
+func (s *StrictOrderer) insertItem(insertIdx, itemIdx int) {
+	for i := itemIdx; i > insertIdx; i-- {
+		s.swap(i, i-1)
+	}
+}
+
+func (s *StrictOrderer) compare(idx1, idx2 int) int {
 	items := s.GetItems()
-	name1 := items[idx1].GetName()
-	name2 := items[idx2].GetName()
-	fmt.Printf("Which is better? %v or %v?\n", name1, name2)
-	var userChoice string
-	fmt.Scanln(&userChoice)
-	if userChoice == name1 {
+	item1 := items[idx1].GetName()
+	item2 := items[idx2].GetName()
+	s.OutgoingComps <- [2]string{item1, item2}
+	comparison := <-s.IncomingComps
+	if comparison[0] == item1 {
 		return idx1
 	} else {
 		return idx2
 	}
 }
 
-func (s *StrictOrderer) Swap(idx1, idx2 int) {
-	tmp := s.GetItems()[idx1]
-	s.SetItem(idx1, s.GetItems()[idx2])
-	s.SetItem(idx2, tmp)
-}
-
-func (s *StrictOrderer) InsertItem(insertIdx, itemIdx int) {
-	// items := s.GetItems()
-	// item := items[itemIdx]
-	for i := itemIdx; i > insertIdx; i-- {
-
-		s.Swap(i, i-1)
-	}
-}
-
-func (s *StrictOrderer) BinarySearch(start, end, item int) {
+func (s *StrictOrderer) binarySearch(start, end, item int) {
 	median := (start + end) / 2
 	if end < start {
-		s.InsertItem(start, item)
+		s.insertItem(start, item)
 		return
 	}
-	if s.Compare(median, item) == median {
-		s.BinarySearch(start, median-1, item)
+	if s.compare(median, item) == median {
+		s.binarySearch(start, median-1, item)
 	} else {
-		s.BinarySearch(median+1, end, item)
-	}
-}
-
-func (s *StrictOrderer) Sort() {
-	// splits array into sorted and unsorted regions
-	for i := 1; i < s.Len(); i++ {
-		fmt.Printf("i = %v\n", i)
-		s.BinarySearch(0, i, i)
-		s.PrintItems()
+		s.binarySearch(median+1, end, item)
 	}
 }
