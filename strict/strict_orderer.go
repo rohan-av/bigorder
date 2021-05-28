@@ -2,6 +2,7 @@ package strict
 
 import (
 	"fmt"
+	"math"
 
 	item "github.com/rohan-av/bigorder/item"
 )
@@ -10,10 +11,35 @@ type StrictOrderer struct {
 	Items         []*item.Item
 	OutgoingComps chan [2]string
 	IncomingComps chan [2]string
+	Progress      [2]int // current, total (estimated)
+}
+
+func NewStrictOrderer(items []*item.Item, incomingComps, outgoingComps chan [2]string) *StrictOrderer {
+	progress := [2]int{}
+	progress[1] = getEstimatedLeft(1, len(items))
+	orderer := StrictOrderer{
+		Items:         items,
+		OutgoingComps: outgoingComps,
+		IncomingComps: incomingComps,
+		Progress:      progress,
+	}
+	return &orderer
+}
+
+func getEstimatedLeft(start, end int) int {
+	var res float64 = 0
+	for i := start; i <= end; i++ {
+		res = res + math.Log2(float64(i)+0.001)
+	}
+	return int(math.Floor(res))
 }
 
 func (s *StrictOrderer) GetItems() []*item.Item {
 	return s.Items
+}
+
+func (s *StrictOrderer) GetProgress() [2]int {
+	return s.Progress
 }
 
 func (s *StrictOrderer) GetSortedList() []*item.Item {
@@ -49,6 +75,7 @@ func (s *StrictOrderer) Sort() {
 	// splits array into sorted and unsorted regions
 	for i := 1; i < s.Len(); i++ {
 		fmt.Printf("i = %v\n", i)
+		s.Progress[0] = getEstimatedLeft(1, i)
 		s.binarySearch(0, i, i)
 		s.PrintItems()
 	}
@@ -81,6 +108,7 @@ func (s *StrictOrderer) compare(idx1, idx2 int) int {
 	}
 	s.OutgoingComps <- [2]string{item1, item2}
 	comparison := <-s.IncomingComps
+	s.Progress[0] = s.Progress[0] + 1
 	if comparison[0] == item1 {
 		return idx1
 	} else {

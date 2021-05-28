@@ -15,4 +15,3 @@ Advanced features could include the following:
 
 -   Other methods of ordering
 -   Categorizion of items into tiers
--   Web API-centric design for BigOrder to be used in development

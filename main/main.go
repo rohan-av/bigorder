@@ -21,7 +21,9 @@ func main() {
 	}
 	incoming := make(chan [2]string)
 	outgoing := make(chan [2]string)
-	orderer := strict.StrictOrderer{Items: arr, IncomingComps: outgoing, OutgoingComps: incoming}
+	orderer := strict.NewStrictOrderer(arr, outgoing, incoming)
+	//orderer := strict.StrictOrderer{arr, outgoing, incoming, [2]int{}}
+	fmt.Println(orderer.GetProgress())
 	go orderer.Sort()
 	for {
 		select {
@@ -35,6 +37,7 @@ func main() {
 				} else {
 					outgoing <- [2]string{items[1], items[0]}
 				}
+				fmt.Println(orderer.GetProgress())
 			} else {
 				fmt.Println("channel closed")
 				fmt.Printf("1st: %v\n", orderer.GetItems()[8].GetName())
