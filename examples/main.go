@@ -27,25 +27,35 @@ func main() {
 	}
 
 	fmt.Println(orderer.GetProgress())
-	go orderer.Sort()
+	done := make(chan bool)
 
-	for {
-		if items, ok := orderer.GetNextComparison(); ok {
-			fmt.Printf("Which is better? %v or %v?\n", items[0], items[1])
-			var userChoice string
-			fmt.Scanln(&userChoice)
-			if userChoice == items[0] {
-				orderer.SendComparison(items[0], items[1])
+	go orderer.Sort()
+	go func() {
+		// endless for loop to handle human comparisons
+		for {
+			if items, ok := orderer.GetNextComparison(); ok {
+				fmt.Printf("Which is better? %v or %v?\n", items[0], items[1])
+				var userChoice string
+				fmt.Scanln(&userChoice)
+				if userChoice == items[0] {
+					orderer.SendComparison(items[0], items[1])
+				} else {
+					orderer.SendComparison(items[1], items[0])
+				}
+				fmt.Println(orderer.GetProgress())
 			} else {
-				orderer.SendComparison(items[1], items[0])
+				fmt.Println("channel closed")
+				done <- true
+				return
 			}
-			fmt.Println(orderer.GetProgress())
-		} else {
-			fmt.Println("channel closed")
-			fmt.Printf("1st: %v\n", orderer.GetItems()[8].GetName())
-			fmt.Printf("2nd: %v\n", orderer.GetItems()[7].GetName())
-			fmt.Printf("3rd: %v\n", orderer.GetItems()[6].GetName())
-			return
 		}
-	}
+	}()
+
+	// do other thing
+
+	<-done
+	fmt.Printf("1st: %v\n", orderer.GetItems()[8].GetName())
+	fmt.Printf("2nd: %v\n", orderer.GetItems()[7].GetName())
+	fmt.Printf("3rd: %v\n", orderer.GetItems()[6].GetName())
+	fmt.Println("finished")
 }
