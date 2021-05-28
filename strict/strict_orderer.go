@@ -8,20 +8,20 @@ import (
 )
 
 type StrictOrderer struct {
-	Items         []item.Item
-	OutgoingComps chan [2]string
-	IncomingComps chan [2]string
+	Items         []*item.Item
+	OutgoingComps chan [2]*item.Item
+	IncomingComps chan [2]*item.Item
 	Progress      [2]int // current, total (estimated)
 }
 
-func NewStrictOrderer(items []item.Item) (*StrictOrderer, error) {
+func NewStrictOrderer(items []*item.Item) (*StrictOrderer, error) {
 	if len(items) == 0 || len(items) == 1 {
 		return nil, fmt.Errorf("no sorting required")
 	}
 
 	progress := [2]int{0, getEstimatedLeft(1, len(items))}
-	outgoingComps := make(chan [2]string)
-	incomingComps := make(chan [2]string)
+	outgoingComps := make(chan [2]*item.Item)
+	incomingComps := make(chan [2]*item.Item)
 	orderer := StrictOrderer{
 		Items:         items,
 		OutgoingComps: outgoingComps,
@@ -31,7 +31,7 @@ func NewStrictOrderer(items []item.Item) (*StrictOrderer, error) {
 	return &orderer, nil
 }
 
-func (s *StrictOrderer) GetItems() []item.Item {
+func (s *StrictOrderer) GetItems() []*item.Item {
 	return s.Items
 }
 
@@ -39,7 +39,7 @@ func (s *StrictOrderer) GetProgress() [2]int {
 	return s.Progress
 }
 
-func (s *StrictOrderer) GetSortedList() []item.Item {
+func (s *StrictOrderer) GetSortedList() []*item.Item {
 	if _, ok := <-s.IncomingComps; !ok {
 		return s.GetItems()
 	} else {
@@ -47,13 +47,13 @@ func (s *StrictOrderer) GetSortedList() []item.Item {
 	}
 }
 
-func (s *StrictOrderer) GetNextComparison() ([2]string, bool) {
+func (s *StrictOrderer) GetNextComparison() ([2]*item.Item, bool) {
 	comp, ok := <-s.OutgoingComps
 	return comp, ok
 }
 
-func (s *StrictOrderer) SendComparison(higher, lower string) {
-	s.IncomingComps <- [2]string{higher, lower}
+func (s *StrictOrderer) SendComparison(higher, lower *item.Item) {
+	s.IncomingComps <- [2]*item.Item{higher, lower}
 }
 
 func (s *StrictOrderer) Len() int {
@@ -72,7 +72,7 @@ func (s *StrictOrderer) Sort() {
 	close(s.OutgoingComps)
 }
 
-func (s *StrictOrderer) setItem(idx int, item item.Item) {
+func (s *StrictOrderer) setItem(idx int, item *item.Item) {
 	s.GetItems()[idx] = item
 }
 
@@ -90,12 +90,12 @@ func (s *StrictOrderer) insertItem(insertIdx, itemIdx int) {
 
 func (s *StrictOrderer) compare(idx1, idx2 int) int {
 	items := s.GetItems()
-	item1 := items[idx1].GetName()
-	item2 := items[idx2].GetName()
+	item1 := items[idx1]
+	item2 := items[idx2]
 	if item1 == item2 {
 		return idx1
 	}
-	s.OutgoingComps <- [2]string{item1, item2}
+	s.OutgoingComps <- [2]*item.Item{item1, item2}
 	comparison := <-s.IncomingComps
 	s.Progress[0] = s.Progress[0] + 1
 	if comparison[0] == item1 {

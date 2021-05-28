@@ -8,16 +8,16 @@ import (
 )
 
 func main() {
-	arr := []item.Item{
-		&Album{Name: "pinkerton"},
-		&Album{Name: "blue"},
-		&Album{Name: "green"},
-		&Album{Name: "white"},
-		&Album{Name: "hurley"},
-		&Album{Name: "ewbaite"},
-		&Album{Name: "okhuman"},
-		&Album{Name: "black"},
-		&Album{Name: "pacific"},
+	arr := []*item.Item{
+		{Name: "pinkerton"},
+		{Name: "blue"},
+		{Name: "green"},
+		{Name: "white"},
+		{Name: "hurley"},
+		{Name: "ewbaite"},
+		{Name: "okhuman"},
+		{Name: "black"},
+		{Name: "pacific"},
 	}
 
 	orderer, err := strict.NewStrictOrderer(arr)
@@ -34,10 +34,10 @@ func main() {
 		// endless for loop to handle human comparisons
 		for {
 			if items, ok := orderer.GetNextComparison(); ok {
-				fmt.Printf("Which is better? %v or %v?\n", items[0], items[1])
+				fmt.Printf("Which is better? %v or %v?\n", items[0].GetName(), items[1].GetName())
 				var userChoice string
 				fmt.Scanln(&userChoice)
-				if userChoice == items[0] {
+				if userChoice == items[0].GetName() {
 					orderer.SendComparison(items[0], items[1])
 				} else {
 					orderer.SendComparison(items[1], items[0])
