@@ -8,33 +8,30 @@ import (
 )
 
 type StrictOrderer struct {
-	Items         []*item.Item
+	Items         []item.Item
 	OutgoingComps chan [2]string
 	IncomingComps chan [2]string
 	Progress      [2]int // current, total (estimated)
 }
 
-func NewStrictOrderer(items []*item.Item, incomingComps, outgoingComps chan [2]string) *StrictOrderer {
-	progress := [2]int{}
-	progress[1] = getEstimatedLeft(1, len(items))
+func NewStrictOrderer(items []item.Item) (*StrictOrderer, error) {
+	if len(items) == 0 || len(items) == 1 {
+		return nil, fmt.Errorf("no sorting required")
+	}
+
+	progress := [2]int{0, getEstimatedLeft(1, len(items))}
+	outgoingComps := make(chan [2]string)
+	incomingComps := make(chan [2]string)
 	orderer := StrictOrderer{
 		Items:         items,
 		OutgoingComps: outgoingComps,
 		IncomingComps: incomingComps,
 		Progress:      progress,
 	}
-	return &orderer
+	return &orderer, nil
 }
 
-func getEstimatedLeft(start, end int) int {
-	var res float64 = 0
-	for i := start; i <= end; i++ {
-		res = res + math.Log2(float64(i)+0.001)
-	}
-	return int(math.Floor(res))
-}
-
-func (s *StrictOrderer) GetItems() []*item.Item {
+func (s *StrictOrderer) GetItems() []item.Item {
 	return s.Items
 }
 
@@ -42,7 +39,7 @@ func (s *StrictOrderer) GetProgress() [2]int {
 	return s.Progress
 }
 
-func (s *StrictOrderer) GetSortedList() []*item.Item {
+func (s *StrictOrderer) GetSortedList() []item.Item {
 	if _, ok := <-s.IncomingComps; !ok {
 		return s.GetItems()
 	} else {
@@ -50,21 +47,13 @@ func (s *StrictOrderer) GetSortedList() []*item.Item {
 	}
 }
 
-func (s *StrictOrderer) GetNextComparison() [2]string {
-	return <-s.OutgoingComps
+func (s *StrictOrderer) GetNextComparison() ([2]string, bool) {
+	comp, ok := <-s.OutgoingComps
+	return comp, ok
 }
 
 func (s *StrictOrderer) SendComparison(higher, lower string) {
 	s.IncomingComps <- [2]string{higher, lower}
-}
-
-// for debugging purposes
-func (s *StrictOrderer) PrintItems() {
-	fmt.Print("\n")
-	for i := 0; i < s.Len(); i++ {
-		fmt.Println(s.GetItems()[i].GetName())
-	}
-	fmt.Print("\n")
 }
 
 func (s *StrictOrderer) Len() int {
@@ -77,13 +66,13 @@ func (s *StrictOrderer) Sort() {
 		fmt.Printf("i = %v\n", i)
 		s.Progress[0] = getEstimatedLeft(1, i)
 		s.binarySearch(0, i, i)
-		s.PrintItems()
+		s.printItems()
 	}
 	close(s.IncomingComps)
 	close(s.OutgoingComps)
 }
 
-func (s *StrictOrderer) setItem(idx int, item *item.Item) {
+func (s *StrictOrderer) setItem(idx int, item item.Item) {
 	s.GetItems()[idx] = item
 }
 
@@ -127,4 +116,21 @@ func (s *StrictOrderer) binarySearch(start, end, item int) {
 	} else {
 		s.binarySearch(median+1, end, item)
 	}
+}
+
+func getEstimatedLeft(start, end int) int {
+	var res float64 = 0
+	for i := start; i <= end; i++ {
+		res = res + math.Log2(float64(i)+0.001)
+	}
+	return int(math.Floor(res))
+}
+
+// for debugging purposes
+func (s *StrictOrderer) printItems() {
+	fmt.Print("\n")
+	for i := 0; i < s.Len(); i++ {
+		fmt.Println(s.GetItems()[i].GetName())
+	}
+	fmt.Print("\n")
 }

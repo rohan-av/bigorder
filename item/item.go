@@ -1,10 +1,6 @@
 package item
 
-type Item struct {
-	Name string
+type Item interface {
+	GetName() string
 	// additional properties can include Tier/Rating etc.
-}
-
-func (i *Item) GetName() string {
-	return i.Name
 }
