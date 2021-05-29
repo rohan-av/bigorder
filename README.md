@@ -4,14 +4,19 @@ BigOrder is a simple tool that can be used to order objects in a manner of best 
 
 ## Features
 
-The basic feature list includes the following:
+Currently, BigOrder supports a StrictOrderer, where strict preferences between two items are required in order to sort elements properly. The current implementation is concurrency-friendly and also offers a reasonably low number of human comparisons, as it uses a binary selection sort.
 
--   Generation of order via two-item "showdowns"
--   CLI user interaction
--   Importing and exporting list of items from a .json file
--   Progress displayed for the number of showdowns needed
+### To-Do List (for v1.0.0)
 
-Advanced features could include the following:
+-   [x] Sorting algorithm implementation
+-   [x] StrictOrderer implementation and example usage
+-   [ ] PartialOrderer implementation and example usage
+-   [ ] JSON import of data to be sorted
+-   [ ] Documentation
+-   [ ] Tests
 
--   Other methods of ordering
--   Categorizion of items into tiers
+## How To Use
+
+An orderer can be defined using the provided constructor which takes in an array of elements of the `Item` type found in package `items`.
+
+The `sort()` method must be called in a goroutine. The method `GetNextComparison()` retrieves the next comparison to be made by the user, and `SendNextComparison(higher, lower item.Item)` sends the comparison results. The handling of human comparisons can be done as a separate goroutine (see [example](https://github.com/rohan-av/bigorder/blob/master/examples/main.go)).
